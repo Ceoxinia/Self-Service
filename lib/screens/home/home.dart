@@ -5,7 +5,6 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:selfservice/screens/home/dashboard.dart';
 import 'package:selfservice/screens/home/form.dart';
 import 'package:selfservice/screens/home/history.dart';
-import 'package:selfservice/screens/home/notification.dart';
 import 'package:selfservice/screens/home/profile.dart';
 
 class Home extends StatefulWidget {
@@ -22,15 +21,14 @@ class _HomeState extends State<Home> {
 
   final screens = [
     dashboard(),
-    notifications(),
     form(),
     history(),
     utilisateur(),
   ];
   final directeur_screens = [
     dashboard(),
-    notifications(),
     history(),
+    utilisateur(),
   ];
 
   @override
@@ -40,8 +38,8 @@ class _HomeState extends State<Home> {
       extendBody: true,
       bottomNavigationBar: CurvedNavigationBar(
         backgroundColor: Colors.transparent,
-        color: Color(0xfffbb448),
-        buttonBackgroundColor: Color(0xffe46b10),
+        color: Color(0xffF4925D),
+        buttonBackgroundColor: Color(0xffF4925D),
         height: 60,
         animationDuration: Duration(
           milliseconds: 200,
@@ -51,11 +49,6 @@ class _HomeState extends State<Home> {
         items: <Widget>[
           Icon(
             Icons.dashboard,
-            size: 30,
-            color: Colors.white,
-          ),
-          Icon(
-            Icons.notifications,
             size: 30,
             color: Colors.white,
           ),
@@ -74,6 +67,11 @@ class _HomeState extends State<Home> {
             size: 30,
             color: Colors.white,
           ),
+          /*  Icon(
+            Icons.logout,
+            size: 30,
+            color: Colors.white,
+          ),*/
         ],
 
         onTap: (index) => setState(() => this.index = index),
