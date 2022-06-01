@@ -11,39 +11,77 @@ class history extends StatefulWidget {
 
 class _historyState extends State<history> {
   final String x = "";
+  final search = null;
+  final searchController = TextEditingController();
+  List demandes = [];
+
+  void initState() {
+    super.initState();
+    fetchdata();
+  }
+
+  fetchdata() async {
+    dynamic results = await readDemande();
+    if (results != null) {
+      setState(() {
+        demandes = results;
+      });
+    } else {
+      print('erreor');
+    }
+  }
+
+  final user = FirebaseAuth.instance.currentUser!;
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: new Text('Liste des demandes'),
+          title: TextField(
+            controller: searchController,
+            decoration: InputDecoration(
+              hintText: 'format yyyy-mm-jj',
+            ),
+          ),
           centerTitle: true,
           backgroundColor: Color(0xfffbb448),
+          elevation: 0.0,
           actions: [
             IconButton(
               icon: const Icon(Icons.search),
-              onPressed: () {},
+              onPressed: fetchdata,
             )
           ],
         ),
-        body: StreamBuilder<List<Demande>>(
-            stream: readDemandes(),
+        body: FutureBuilder(
+            future: readDemande(),
             builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return Text('Something went Wrong ${snapshot.error}');
-              } else if (snapshot.hasData) {
-                final users = snapshot.data!;
-                return ListView();
+              if (snapshot.hasData) {
+                return ListView.builder(
+                    itemCount: demandes.length,
+                    itemBuilder: (BuildContext ctxt, int index) {
+                      return Text(demandes[index]['etat']);
+                    });
               } else {
                 return Center(child: CircularProgressIndicator());
               }
             }),
       );
 
-  Stream<List<Demande>> readDemandes() => FirebaseFirestore.instance
-      .collection('Demandes')
-      .where("uid", isEqualTo: "demande.uid")
-      .snapshots()
-      .map((snapshot) =>
-          snapshot.docs.map((doc) => Demande.fromJson(doc.data())).toList());
+  Future readDemande() async {
+    final user = FirebaseAuth.instance.currentUser!;
+    List demandes = [];
+
+    final RespoUser = FirebaseFirestore.instance
+        .collection('Demande')
+        .where('emetteur', isEqualTo: user.uid)
+        .get()
+        .then((snapshotRespo) {
+      snapshotRespo.docs.forEach((element) {
+        demandes.add(element.data()!);
+      });
+    });
+
+    return demandes;
+  }
 }
 
 class Demande {

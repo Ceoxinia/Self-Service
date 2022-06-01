@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:selfservice/service/database_management.dart';
 import 'package:selfservice/widget/bezierContainer.dart';
 
 // still have to catch the errors in case they don't write the right infos
@@ -193,7 +193,10 @@ class _SignInState extends State<SignIn> {
                   _emailPasswordWidget(),
                   SizedBox(height: 20),
                   GestureDetector(
-                    onTap: signIn,
+                    onTap: () {
+                      signIn(sonController.text.trim(),
+                          passwordController.text.trim());
+                    },
                     child: _submitButton(),
                   ),
                   SizedBox(height: height * .055),
@@ -204,15 +207,5 @@ class _SignInState extends State<SignIn> {
         ],
       ),
     ));
-  }
-
-  Future signIn() async {
-    final docUser = FirebaseFirestore.instance
-        .collection('Users')
-        .where("SON", isEqualTo: sonController.text.trim());
-    final snapshot = await docUser.get();
-    await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: snapshot.docs[0]['email'],
-        password: passwordController.text.trim());
   }
 }

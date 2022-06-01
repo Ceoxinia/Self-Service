@@ -5,6 +5,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:snippet_coder_utils/FormHelper.dart';
 import 'package:selfservice/service/ascii_cities.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:selfservice/widget/responsibles.dart';
+//import 'package:selfservice/service/email_service.dart';
+
+import '../../service/database_management.dart';
+import '../../service/email_service.dart';
+import '../../widget/titles.dart';
 
 // when the infos are valide we send them to the database and as a notification too
 class form extends StatefulWidget {
@@ -12,59 +18,6 @@ class form extends StatefulWidget {
 
   @override
   State<form> createState() => _formState();
-}
-
-class Demande {
-  String id;
-  final user = FirebaseAuth.instance.currentUser!;
-
-  final String emetteur;
-
-  final String etat;
-  final String wilaya;
-  final String commune;
-  final String detail;
-  final String dateS;
-  final String heureS;
-  final String heureR;
-  final String motif;
-
-  Demande({
-    this.id = '',
-    required this.etat,
-    required this.wilaya,
-    required this.commune,
-    required this.detail,
-    required this.dateS,
-    required this.heureS,
-    required this.heureR,
-    required this.motif,
-    required this.emetteur,
-  });
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'emetteur': user.uid,
-        'etat': etat,
-        'dateS': dateS,
-        'heureR': heureR,
-        'heureS': heureS,
-        'motif': motif,
-        'detail': detail,
-        'commune': commune,
-        'wilaya': wilaya,
-      };
-  static Demande fromJson(Map<String, dynamic> json) => Demande(
-        id: json['id'],
-        etat: json['SON'],
-        wilaya: json['directeur'],
-        commune: json['responsable'],
-        detail: json['departement'],
-        dateS: json['departement'],
-        heureS: json['departement'],
-        motif: json['departement'],
-        heureR: json['departement'],
-        emetteur: json['emetteur'],
-      );
 }
 
 class _formState extends State<form> {
@@ -87,8 +40,22 @@ class _formState extends State<form> {
   DateTime? selectedheureR;
   final _formKey = GlobalKey<FormState>();
 
+  List UsersNeed = [];
+
   void initState() {
     super.initState();
+    fetchdata();
+  }
+
+  fetchdata() async {
+    dynamic results = await readUser(user.uid);
+    if (results != null) {
+      setState(() {
+        UsersNeed = results;
+      });
+    } else {
+      print('erreor');
+    }
   }
 
   final user = FirebaseAuth.instance.currentUser!;
@@ -100,161 +67,270 @@ class _formState extends State<form> {
 
     final detailController = TextEditingController();
     return Scaffold(
-        backgroundColor: Colors.white,
-        body: NestedScrollView(
-            headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                  SliverAppBar(
-                    title: Text('Demande', textScaleFactor: 1),
-                    shape: ContinuousRectangleBorder(
-                        borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(200),
-                    )),
-                    backgroundColor: Color.fromARGB(255, 255, 220, 178),
-                    expandedHeight: 240,
-                    flexibleSpace: FlexibleSpaceBar(
-                      background: Image.asset(
-                        'assets/head.png',
-                        fit: BoxFit.fill,
-                      ),
-                    ),
-                  ),
-                ],
-            body: Form(
-                key: _formKey,
-                child: ListView(
-                  scrollDirection: Axis.vertical,
-                  children: <Widget>[
-                    Center(
-                      child: Text(
-                        "Après avoir rempli ce formulaire, La réponse de votre demande vous sera transmise par mail",
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.openSans(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w300,
-                            letterSpacing: -0.5),
-                      ),
-                    ),
-
-                    Container(
-                      margin:
-                          const EdgeInsets.only(left: 25, top: 15, bottom: 8),
-                      child: Text("Votre Directeur",
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-
-                    Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                            color: Color.fromARGB(255, 217, 213, 213),
-                            boxShadow: [
-                              BoxShadow(
-                                  blurRadius: 18,
-                                  color: Colors.black45,
-                                  spreadRadius: -8)
-                            ],
-                            borderRadius: BorderRadius.circular(20)),
-                        child: ListTile(
-                          title: Text(
-                            "",
-                            style:
-                                TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+      backgroundColor: Colors.white,
+      body: FutureBuilder(
+          future: readUser(user.uid),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return NestedScrollView(
+                  headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                        SliverAppBar(
+                          shape: ContinuousRectangleBorder(
+                              borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(200),
+                          )),
+                          backgroundColor: Color.fromARGB(255, 255, 220, 178),
+                          expandedHeight: 240,
+                          flexibleSpace: FlexibleSpaceBar(
+                            background: Image.asset(
+                              'assets/head.png',
+                              fit: BoxFit.fill,
+                            ),
                           ),
-                        )),
-
-                    //if respo or secrt
-                    Container(
-                      margin:
-                          const EdgeInsets.only(left: 25, top: 15, bottom: 10),
-                      child: Text("Votre Responsable",
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-
-                    Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                            color: Color.fromARGB(255, 217, 213, 213),
-                            boxShadow: [
-                              BoxShadow(
-                                  blurRadius: 18,
-                                  color: Colors.black45,
-                                  spreadRadius: -8)
-                            ],
-                            borderRadius: BorderRadius.circular(20)),
-                        child: ListTile(
-                          title: Text(
-                            "DERRASCHOCK Abdeldjalil",
-                            style:
-                                TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                        ),
+                      ],
+                  body: Form(
+                      key: _formKey,
+                      child: ListView(
+                        scrollDirection: Axis.vertical,
+                        children: <Widget>[
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(left: 30, bottom: 30),
+                            child: Text(
+                              'Creer une demande',
+                              style: GoogleFonts.openSans(
+                                  fontSize: 25,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.5,
+                                  color: Color(0xffF4925D)),
+                            ),
                           ),
-                        )),
 
-                    Container(
-                      margin: const EdgeInsets.only(left: 25, top: 15),
-                      child: Text("Date de Sortie",
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Responsable(UsersNeed[0]['directeur'],
+                                  'directeur', context, 'personnel'),
+                              if (UsersNeed[0]['Role'] == 'personnel')
+                                Responsable(UsersNeed[0]['responsable'],
+                                    'responsable', context, 'personnel'),
+                            ],
+                          ),
+                          //if respo or secrt
 
-                    Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 16),
-                        child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                                color: Color.fromARGB(255, 248, 245, 245),
-                                boxShadow: [
-                                  BoxShadow(
-                                      blurRadius: 12,
-                                      color: Colors.black45,
-                                      spreadRadius: -8)
-                                ],
-                                borderRadius: BorderRadius.circular(16)),
-                            child: TextButton(
-                                onPressed: () {
-                                  DatePicker.showDatePicker(context,
-                                      showTitleActions: true,
-                                      minTime: DateTime.now()
-                                          .subtract(const Duration(hours: 72)),
-                                      maxTime: DateTime.now(),
-                                      onChanged: (date) {
-                                    print('change $date');
-                                  }, onConfirm: (date) {
-                                    print('confirm $date');
-                                    selectedDate = date;
-                                    this.dateS = false;
-                                    setState(() {});
-                                  },
-                                      currentTime: DateTime.now(),
-                                      locale: LocaleType.fr);
+                          title('Date de sortie'),
+
+                          Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 12),
+                                  decoration: BoxDecoration(
+                                      color: Color.fromARGB(255, 248, 245, 245),
+                                      boxShadow: [
+                                        BoxShadow(
+                                            blurRadius: 12,
+                                            color: Colors.black45,
+                                            spreadRadius: -8)
+                                      ],
+                                      borderRadius: BorderRadius.circular(16)),
+                                  child: TextButton(
+                                      onPressed: () {
+                                        DatePicker.showDatePicker(context,
+                                            showTitleActions: true,
+                                            minTime: DateTime.now().subtract(
+                                                const Duration(hours: 72)),
+                                            maxTime: DateTime.now(),
+                                            onChanged: (date) {
+                                          print('change $date');
+                                        }, onConfirm: (date) {
+                                          print('confirm $date');
+                                          selectedDate = date;
+                                          this.dateS = false;
+                                          setState(() {});
+                                        },
+                                            currentTime: DateTime.now(),
+                                            locale: LocaleType.fr);
+                                      },
+                                      child: ListTile(
+                                        title: dateS
+                                            ? Text(
+                                                'Date de Sortie',
+                                                style: TextStyle(
+                                                    color: Color.fromARGB(
+                                                        255, 106, 104, 104)),
+                                              )
+                                            : Text(
+                                                selectedDate
+                                                    .toString()
+                                                    .substring(0, 11),
+                                                style: TextStyle(
+                                                    color: Color.fromARGB(
+                                                        255, 106, 104, 104)),
+                                              ),
+                                        trailing: Icon(Icons.calendar_today,
+                                            color: Colors.orange),
+                                      )))),
+
+                          title('La duree'),
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Container(
+                                    width:
+                                        MediaQuery.of(context).size.width / 2 -
+                                            30,
+                                    decoration: BoxDecoration(
+                                        color:
+                                            Color.fromARGB(255, 248, 245, 245),
+                                        boxShadow: [
+                                          BoxShadow(
+                                              blurRadius: 12,
+                                              color: Colors.black45,
+                                              spreadRadius: -8)
+                                        ],
+                                        borderRadius:
+                                            BorderRadius.circular(16)),
+                                    child: TextButton(
+                                        onPressed: () {
+                                          DatePicker.showTime12hPicker(context,
+                                              showTitleActions: true,
+                                              onChanged: (heureS) {
+                                            print(
+                                                'change $heureS in time zone ' +
+                                                    heureS
+                                                        .timeZoneOffset.inHours
+                                                        .toString());
+                                          }, onConfirm: (heureS) {
+                                            print('confirm $heureS');
+                                            selectedheureS = heureS;
+                                            this.heureSo = false;
+                                            setState(() {});
+                                          }, currentTime: selectedDate);
+                                        },
+                                        child: ListTile(
+                                          title: heureSo
+                                              ? Text(
+                                                  "Heure Sortie",
+                                                  style: TextStyle(
+                                                      color: Color.fromARGB(
+                                                          255, 106, 104, 104)),
+                                                )
+                                              : Text(
+                                                  selectedheureS
+                                                      .toString()
+                                                      .substring(10, 16),
+                                                  style: TextStyle(
+                                                      color: Color.fromARGB(
+                                                          255, 106, 104, 104)),
+                                                ),
+                                          trailing: Icon(Icons.schedule,
+                                              color: Colors.orange),
+                                        ))),
+                                Container(
+                                    width:
+                                        MediaQuery.of(context).size.width / 2 -
+                                            30,
+                                    decoration: BoxDecoration(
+                                        color:
+                                            Color.fromARGB(255, 248, 245, 245),
+                                        boxShadow: [
+                                          BoxShadow(
+                                              blurRadius: 12,
+                                              color: Colors.black45,
+                                              spreadRadius: -8)
+                                        ],
+                                        borderRadius:
+                                            BorderRadius.circular(16)),
+                                    child: TextButton(
+                                        onPressed: () {
+                                          DatePicker.showTime12hPicker(context,
+                                              showTitleActions: true,
+                                              onChanged: (heureR) {
+                                            print(
+                                                'change $heureR in time zone ' +
+                                                    heureR
+                                                        .timeZoneOffset.inHours
+                                                        .toString());
+                                          }, onConfirm: (heureR) {
+                                            print('confirm $heureR');
+                                            selectedheureR = heureR;
+                                            this.heureRe = false;
+                                            setState(() {});
+                                          }, currentTime: selectedDate);
+                                        },
+                                        child: ListTile(
+                                          title: heureRe
+                                              ? Text(
+                                                  "Heure Retour",
+                                                  style: TextStyle(
+                                                      color: Color.fromARGB(
+                                                          255, 106, 104, 104)),
+                                                )
+                                              : Text(
+                                                  selectedheureR
+                                                      .toString()
+                                                      .substring(10, 16),
+                                                  style: TextStyle(
+                                                      color: Color.fromARGB(
+                                                          255, 106, 104, 104)),
+                                                ),
+                                          trailing: Icon(Icons.schedule,
+                                              color: Colors.orange),
+                                        ))),
+                              ]),
+
+                          title('Wilaya'),
+                          Container(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 18),
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                  color: Color.fromARGB(255, 248, 245, 245),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        blurRadius: 12,
+                                        color: Colors.black45,
+                                        spreadRadius: -8)
+                                  ],
+                                  borderRadius: BorderRadius.circular(16)),
+                              child: FormHelper.dropDownWidget(
+                                context,
+                                "Wilaya",
+                                this.countryId,
+                                wilaya,
+                                (onChangedVal) {
+                                  this.countryId = onChangedVal;
+                                  this.states = algeria_cites
+                                      .where((stateItem) =>
+                                          stateItem["wilaya_code"] ==
+                                          onChangedVal)
+                                      .toList();
+                                  this.stateId = null;
+                                  setState(() {});
                                 },
-                                child: ListTile(
-                                  title: dateS
-                                      ? Text(
-                                          'Date de Sortie',
-                                          style: TextStyle(
-                                              color: Color.fromARGB(
-                                                  255, 106, 104, 104)),
-                                        )
-                                      : Text(
-                                          selectedDate
-                                              .toString()
-                                              .substring(0, 11),
-                                          style: TextStyle(
-                                              color: Color.fromARGB(
-                                                  255, 106, 104, 104)),
-                                        ),
-                                  trailing: Icon(Icons.calendar_today,
-                                      color: Colors.orange),
-                                )))),
-
-                    Container(
-                      child: Text("Heure de Sortie",
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
+                                (onValidateVal) {},
+                                borderColor: Color.fromARGB(255, 248, 245, 245),
+                                borderFocusColor:
+                                    Color.fromARGB(255, 248, 245, 245),
+                                borderRadius: 20,
+                                optionValue: "wilaya_code",
+                                optionLabel: "wilaya_name",
+                                paddingBottom: 16.0,
+                                paddingTop: 16.0,
+                                paddingLeft: 8.0,
+                                paddingRight: 8.0,
+                                borderWidth: 0.0,
+                              )),
+                          title('Commune'),
                           Container(
-                              width: MediaQuery.of(context).size.width / 2 - 30,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 18),
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
                                   color: Color.fromARGB(255, 248, 245, 245),
                                   boxShadow: [
@@ -264,42 +340,75 @@ class _formState extends State<form> {
                                         spreadRadius: -8)
                                   ],
                                   borderRadius: BorderRadius.circular(16)),
-                              child: TextButton(
-                                  onPressed: () {
-                                    DatePicker.showTime12hPicker(context,
-                                        showTitleActions: true,
-                                        onChanged: (heureS) {
-                                      print('change $heureS in time zone ' +
-                                          heureS.timeZoneOffset.inHours
-                                              .toString());
-                                    }, onConfirm: (heureS) {
-                                      print('confirm $heureS');
-                                      selectedheureS = heureS;
-                                      this.heureSo = false;
-                                      setState(() {});
-                                    }, currentTime: selectedDate);
-                                  },
-                                  child: ListTile(
-                                    title: heureSo
-                                        ? Text(
-                                            "Heure Sortie",
-                                            style: TextStyle(
-                                                color: Color.fromARGB(
-                                                    255, 106, 104, 104)),
-                                          )
-                                        : Text(
-                                            selectedheureS
-                                                .toString()
-                                                .substring(10, 16),
-                                            style: TextStyle(
-                                                color: Color.fromARGB(
-                                                    255, 106, 104, 104)),
-                                          ),
-                                    trailing: Icon(Icons.schedule,
-                                        color: Colors.orange),
-                                  ))),
+                              child: FormHelper.dropDownWidget(
+                                context,
+                                "Commune",
+                                this.stateId,
+                                this.states,
+                                (onChangedVal) {
+                                  this.stateId = onChangedVal;
+                                },
+                                (onValidateVal) {},
+                                optionValue: "commune_name",
+                                optionLabel: "commune_name",
+                                paddingBottom: 16.0,
+                                paddingTop: 16.0,
+                                paddingLeft: 8.0,
+                                paddingRight: 8.0,
+                                borderColor: Color.fromARGB(255, 248, 245, 245),
+                                borderFocusColor:
+                                    Color.fromARGB(255, 248, 245, 245),
+                              )),
+
+                          title('Motif'),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 18),
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 12),
+                                  decoration: BoxDecoration(
+                                      color: Color.fromARGB(255, 248, 245, 245),
+                                      boxShadow: [
+                                        BoxShadow(
+                                            blurRadius: 12,
+                                            color: Colors.black45,
+                                            spreadRadius: -8)
+                                      ],
+                                      borderRadius: BorderRadius.circular(16)),
+                                  child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 16),
+                                      child: DropdownButton(
+                                        isExpanded: true,
+                                        value: dropdownvalue,
+                                        icon: const Icon(
+                                            Icons.keyboard_arrow_down),
+                                        items: items.map((String items) {
+                                          return DropdownMenuItem(
+                                            value: items,
+                                            child: Text(items),
+                                          );
+                                        }).toList(),
+                                        // After selecting the desired option,it will
+                                        // change button value to selected value
+                                        onChanged: (String? newValue) {
+                                          setState(() {
+                                            dropdownvalue = newValue!;
+                                          });
+                                        },
+                                      ))),
+                            ],
+                          ),
+                          title('Details'),
+
                           Container(
-                              width: MediaQuery.of(context).size.width / 2 - 30,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 18),
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
                                   color: Color.fromARGB(255, 248, 245, 245),
                                   boxShadow: [
@@ -309,289 +418,134 @@ class _formState extends State<form> {
                                         spreadRadius: -8)
                                   ],
                                   borderRadius: BorderRadius.circular(16)),
-                              child: TextButton(
-                                  onPressed: () {
-                                    DatePicker.showTime12hPicker(context,
-                                        showTitleActions: true,
-                                        onChanged: (heureR) {
-                                      print('change $heureR in time zone ' +
-                                          heureR.timeZoneOffset.inHours
-                                              .toString());
-                                    }, onConfirm: (heureR) {
-                                      print('confirm $heureR');
-                                      selectedheureR = heureR;
-                                      this.heureRe = false;
-                                      setState(() {});
-                                    }, currentTime: selectedDate);
-                                  },
-                                  child: ListTile(
-                                    title: heureRe
-                                        ? Text(
-                                            "Heure Reto",
-                                            style: TextStyle(
-                                                color: Color.fromARGB(
-                                                    255, 106, 104, 104)),
-                                          )
-                                        : Text(
-                                            selectedheureR
-                                                .toString()
-                                                .substring(10, 16),
-                                            style: TextStyle(
-                                                color: Color.fromARGB(
-                                                    255, 106, 104, 104)),
-                                          ),
-                                    trailing: Icon(Icons.schedule,
-                                        color: Colors.orange),
-                                  ))),
-                        ]),
-
-                    Container(
-                      margin: const EdgeInsets.only(left: 25, bottom: 15),
-                      child: Text("Wilaya",
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                            color: Color.fromARGB(255, 248, 245, 245),
-                            boxShadow: [
-                              BoxShadow(
-                                  blurRadius: 12,
-                                  color: Colors.black45,
-                                  spreadRadius: -8)
-                            ],
-                            borderRadius: BorderRadius.circular(16)),
-                        child: FormHelper.dropDownWidget(
-                          context,
-                          "Wilaya",
-                          this.countryId,
-                          wilaya,
-                          (onChangedVal) {
-                            this.countryId = onChangedVal;
-                            this.states = algeria_cites
-                                .where((stateItem) =>
-                                    stateItem["wilaya_code"] == onChangedVal)
-                                .toList();
-                            this.stateId = null;
-                            setState(() {});
-                          },
-                          (onValidateVal) {},
-                          borderColor: Color.fromARGB(255, 248, 245, 245),
-                          borderFocusColor: Color.fromARGB(255, 248, 245, 245),
-                          borderRadius: 20,
-                          optionValue: "wilaya_code",
-                          optionLabel: "wilaya_name",
-                          paddingBottom: 16.0,
-                          paddingTop: 16.0,
-                          paddingLeft: 8.0,
-                          paddingRight: 8.0,
-                          borderWidth: 0.0,
-                        )),
-                    Container(
-                      margin:
-                          const EdgeInsets.only(top: 15, left: 25, bottom: 15),
-                      child: Text("Commune",
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                            color: Color.fromARGB(255, 248, 245, 245),
-                            boxShadow: [
-                              BoxShadow(
-                                  blurRadius: 12,
-                                  color: Colors.black45,
-                                  spreadRadius: -8)
-                            ],
-                            borderRadius: BorderRadius.circular(16)),
-                        child: FormHelper.dropDownWidget(
-                          context,
-                          "Commune",
-                          this.stateId,
-                          this.states,
-                          (onChangedVal) {
-                            this.stateId = onChangedVal;
-                          },
-                          (onValidateVal) {},
-                          optionValue: "commune_name",
-                          optionLabel: "commune_name",
-                          paddingBottom: 16.0,
-                          paddingTop: 16.0,
-                          paddingLeft: 8.0,
-                          paddingRight: 8.0,
-                          borderColor: Color.fromARGB(255, 248, 245, 245),
-                          borderFocusColor: Color.fromARGB(255, 248, 245, 245),
-                        )),
-
-                    Container(
-                      margin: const EdgeInsets.only(left: 25, top: 16),
-                      child: Text("Motif",
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 18),
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 18),
-                            decoration: BoxDecoration(
-                                color: Color.fromARGB(255, 248, 245, 245),
-                                boxShadow: [
-                                  BoxShadow(
-                                      blurRadius: 12,
-                                      color: Colors.black45,
-                                      spreadRadius: -8)
-                                ],
-                                borderRadius: BorderRadius.circular(16)),
-                            child: Padding(
+                              child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 16),
-                                child: DropdownButton(
-                                  isExpanded: true,
-                                  value: dropdownvalue,
-                                  icon: const Icon(Icons.keyboard_arrow_down),
-                                  items: items.map((String items) {
-                                    return DropdownMenuItem(
-                                      value: items,
-                                      child: Text(items),
+                                child: TextField(
+                                  controller: detailController,
+                                  maxLines: 8, //or null
+                                  decoration: InputDecoration.collapsed(
+                                      hintText:
+                                          "veuillez fournir les details ici"),
+                                ),
+                              )),
+
+                          GestureDetector(
+                            onTap: () {
+                              if (_formKey.currentState!.validate() &&
+                                  !dateS &&
+                                  !heureRe &&
+                                  !heureSo &&
+                                  !selectedheureR!.isBefore(selectedheureS!) &&
+                                  detailController.text.trim() != null &&
+                                  dropdownvalue != "Motif") {
+                                if (UsersNeed[0]['Role'] == 'personnel' &&
+                                    UsersNeed[1]['etat'] == 'disponible') {
+                                  creerDemande(
+                                      'en attente1',
+                                      countryId!,
+                                      stateId!,
+                                      selectedheureS
+                                          .toString()
+                                          .substring(10, 16)!,
+                                      selectedheureR
+                                          .toString()
+                                          .substring(10, 16)!,
+                                      selectedDate.toString().substring(0, 11)!,
+                                      dropdownvalue,
+                                      detailController.text.trim(),
+                                      UsersNeed[0]['name'],
+                                      user.uid);
+                                  sendEmail(
+                                      UsersNeed[0]['name'],
+                                      UsersNeed[1]['email'],
+                                      UsersNeed[1]['name']);
+                                } else {
+                                  creerDemande(
+                                      'en attente2',
+                                      countryId!,
+                                      stateId!,
+                                      selectedheureS
+                                          .toString()
+                                          .substring(10, 16)!,
+                                      selectedheureR
+                                          .toString()
+                                          .substring(10, 16)!,
+                                      selectedDate.toString().substring(0, 11)!,
+                                      dropdownvalue,
+                                      detailController.text.trim(),
+                                      UsersNeed[0]['name'],
+                                      user.uid);
+                                  sendEmail(
+                                      UsersNeed[0]['name'],
+                                      UsersNeed[2]['email'],
+                                      UsersNeed[2]['name']);
+                                }
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content:
+                                          Text('Votre demande a ete envoyee')),
+                                );
+                              } else {
+                                if (dateS ||
+                                    heureRe ||
+                                    heureSo ||
+                                    detailController.text.trim() == null ||
+                                    dropdownvalue == "Motif") {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'Veuillez remplire toutes les champs')),
+                                  );
+                                } else {
+                                  if (selectedheureR!
+                                      .isBefore(selectedheureS!)) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text("Erreur dans l'heure")),
                                     );
-                                  }).toList(),
-                                  // After selecting the desired option,it will
-                                  // change button value to selected value
-                                  onChanged: (String? newValue) {
-                                    setState(() {
-                                      dropdownvalue = newValue!;
-                                    });
-                                  },
-                                ))),
-                      ],
-                    ),
-                    Container(
-                      margin: const EdgeInsets.only(left: 25, top: 16),
-                      child: Text("Details",
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-
-                    Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 18),
-                        decoration: BoxDecoration(
-                            color: Color.fromARGB(255, 248, 245, 245),
-                            boxShadow: [
-                              BoxShadow(
-                                  blurRadius: 12,
-                                  color: Colors.black45,
-                                  spreadRadius: -8)
-                            ],
-                            borderRadius: BorderRadius.circular(16)),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 16),
-                          child: TextField(
-                            controller: detailController,
-                            maxLines: 8, //or null
-                            decoration: InputDecoration.collapsed(
-                                hintText: "veuillez fournir les details ici"),
+                                  }
+                                }
+                              }
+                              ;
+                            },
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              padding: EdgeInsets.symmetric(vertical: 15),
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 30, vertical: 16),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(5)),
+                                  boxShadow: <BoxShadow>[
+                                    BoxShadow(
+                                        color: Colors.grey.shade200,
+                                        offset: Offset(2, 4),
+                                        blurRadius: 5,
+                                        spreadRadius: 2)
+                                  ],
+                                  gradient: LinearGradient(
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                      colors: [
+                                        Color.fromARGB(255, 245, 112, 147),
+                                        Color(0xffF4925D)
+                                      ])),
+                              child: Text(
+                                'Valider',
+                                style: TextStyle(
+                                    fontSize: 20, color: Colors.white),
+                              ),
+                            ),
                           ),
-                        )),
-
-                    GestureDetector(
-                      onTap: () {
-                        if (_formKey.currentState!.validate() &&
-                            !dateS &&
-                            !heureRe &&
-                            !heureSo &&
-                            !selectedheureR!.isBefore(selectedheureS!) &&
-                            detailController.text.trim() != null &&
-                            dropdownvalue != "Motif") {
-                          creerDemande(
-                              'en attente',
-                              countryId!,
-                              stateId!,
-                              selectedheureS.toString()!,
-                              selectedheureR.toString()!,
-                              selectedDate.toString()!,
-                              dropdownvalue,
-                              detailController.text.trim());
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Votre demande a ete envoyee')),
-                          );
-                        } else {
-                          if (dateS ||
-                              heureRe ||
-                              heureSo ||
-                              detailController.text.trim() == null ||
-                              dropdownvalue == "Motif") {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text(
-                                      'Veuillez remplire toutes les champs')),
-                            );
-                          } else {
-                            if (selectedheureR!.isBefore(selectedheureS!)) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text("Erreur dans l'heure")),
-                              );
-                            }
-                          }
-                        }
-                        ;
-                      },
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        padding: EdgeInsets.symmetric(vertical: 15),
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.all(Radius.circular(5)),
-                            boxShadow: <BoxShadow>[
-                              BoxShadow(
-                                  color: Colors.grey.shade200,
-                                  offset: Offset(2, 4),
-                                  blurRadius: 5,
-                                  spreadRadius: 2)
-                            ],
-                            gradient: LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                                colors: [
-                                  Color(0xfffbb448),
-                                  Color(0xfff7892b)
-                                ])),
-                        child: Text(
-                          'Valider',
-                          style: TextStyle(fontSize: 20, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ))));
-  }
-
-  Future creerDemande(String etat, String wilaya, String Commune, String HeureS,
-      String HeureR, String dateS, String motif, String detail) async {
-    // Call the user's CollectionReference to add a new user
-    final docUser = FirebaseFirestore.instance.collection('Demande').doc();
-    final demande = Demande(
-      id: docUser.id,
-      etat: etat,
-      wilaya: wilaya,
-      commune: Commune,
-      heureR: HeureR,
-      heureS: HeureS,
-      dateS: dateS,
-      motif: motif,
-      detail: detail,
-      emetteur: user.uid,
+                        ],
+                      )));
+            } else {
+              return Center(child: CircularProgressIndicator());
+            }
+          }),
     );
-    final json = demande.toJson();
-    await docUser.set(json);
   }
 }
